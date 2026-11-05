@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -31,6 +31,8 @@ export function StockTable() {
 
   // Advanced multi-criteria filter engine with performance benchmarking
   const filteredData = useMemo(() => {
+    if (!isMounted) return []; // Prevents execution and time checks during server prerendering
+
     const startTime = performance.now();
 
     const result = stocks.filter((stock) => {
@@ -48,13 +50,12 @@ export function StockTable() {
     const endTime = performance.now();
     const duration = (endTime - startTime).toFixed(2);
     
-    // Log benchmark throughput for your Zetheta documentation
     if (stocks.length > 0) {
       console.log(`[Zetheta Benchmark] Filtered ${stocks.length} records down to ${result.length} matches in ${duration}ms`);
     }
 
     return result;
-  }, [stocks, searchQuery, selectedSector, minPrice, maxPrice, minVolume]);
+  }, [isMounted, stocks, searchQuery, selectedSector, minPrice, maxPrice, minVolume]);
 
   const columns = useMemo(
     () => [
@@ -117,7 +118,8 @@ export function StockTable() {
   });
 
   const { rows } = table.getRowModel();
-  const parentRef = React.useRef<HTMLDivElement>(null);
+  
+  const parentRef = useRef<HTMLDivElement>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
@@ -137,7 +139,7 @@ export function StockTable() {
         className="h-[600px] overflow-auto relative scrollbar-thin scrollbar-thumb-gray-700"
       >
         <table className="w-full text-left border-collapse">
-          <thead className="bg-gray-950 sticky top-0 z-10 border-b border-gray-800">
+          <thead className="bg-[#0b1329] text-slate-400 uppercase text-[11px] tracking-wider border-b border-slate-800/80">
             {table.getHeaderGroups().map((headerGroup: HeaderGroup<Stock>) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header: Header<Stock, unknown>) => (
@@ -167,8 +169,7 @@ export function StockTable() {
                     width: '100%',
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
-                  className="border-b border-gray-800/50 hover:bg-gray-800/40 transition-colors flex items-center"
-                >
+                    className="border-b border-slate-900/60 hover:bg-slate-900/80 transition-colors flex items-center"                >
                   {row.getVisibleCells().map((cell: Cell<Stock, unknown>) => (
                     <td
                       key={cell.id}
